@@ -1,7 +1,9 @@
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View, TextInput, Button, Image, ImageBackground } from 'react-native';
+import { StyleSheet, Text, View, TextInput, Button, Image, ImageBackground, TouchableOpacity } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 
-export default function MainScreen() {
+export default function MainScreen({navigation}) {
+
     return (
         <View style={styles.container}>
         <View style={{flex:2, justifyContent:'center', width:'100%', alignItems:'center',}}>
@@ -16,35 +18,42 @@ export default function MainScreen() {
           </View>
         </View>
         <View style={{flex:3, gap:20, alignItems:'center', width:'100%'}}>
-          
-          <View style={{width:'90%', height:80, backgroundColor:'#000', borderRadius:40,}}>
+
+      <TouchableOpacity onPress={()=> navigation.navigate("ExcercisesScreen")} style={{width:'90%', height:80, backgroundColor:'#000', borderRadius:40,}}>
+         <View style={{ borderRadius:40,}}>
             <ImageBackground source={require('../assets/gym.jpeg')} style={{width:'100%', height:'100%', justifyContent:'space-around', alignItems:'center', flexDirection:'row',}} imageStyle={{ borderRadius:40, opacity:0.6,}}>
               <Text style={{color:'#fff', fontSize:25, fontWeight:600, textTransform:'uppercase',}}>excercises         </Text> 
               <Image source={require('../assets/arrow-right.png')} style={{width:30, height:30,}}/>
             </ImageBackground>
           </View>
-        
-        
-        <View style={{width:'90%', height:80, backgroundColor:'#000', borderRadius:40,}}>
+       </TouchableOpacity> 
+
+      <TouchableOpacity onPress={()=> navigation.navigate("ActivityScreen")} style={{width:'90%', height:80, backgroundColor:'#000', borderRadius:40,}}>
+        <View style={{borderRadius:40,}}>
             <ImageBackground source={require('../assets/active.png')} style={{width:'100%', height:'100%', justifyContent:'space-around', alignItems:'center', flexDirection:'row',}} imageStyle={{ borderRadius:40, opacity:0.6,}}>
               <Text style={{color:'#fff', fontSize:25, fontWeight:600, textTransform:'uppercase',}}>activity                 </Text> 
               <Image source={require('../assets/arrow-right.png')} style={{width:30, height:30,}}/>
             </ImageBackground>
           </View>
+      </TouchableOpacity>
 
-          <View style={{width:'90%', height:80, backgroundColor:'#000', borderRadius:40,}}>
+      <TouchableOpacity onPress={()=> navigation.navigate("PlansScreen")} style={{width:'90%', height:80, backgroundColor:'#000', borderRadius:40,}}>
+          <View style={{borderRadius:40,}}>
             <ImageBackground source={require('../assets/plan.png')} style={{width:'100%', height:'100%', justifyContent:'space-around', alignItems:'center', flexDirection:'row',}} imageStyle={{ borderRadius:40, opacity:0.6,}}>
               <Text style={{color:'#fff', fontSize:25, fontWeight:600, textTransform:'uppercase',}}>plans                      </Text> 
               <Image source={require('../assets/arrow-right.png')} style={{width:30, height:30,}}/>
             </ImageBackground>
           </View>
+      </TouchableOpacity>
 
-          <View style={{width:'90%', height:80, backgroundColor:'#000', borderRadius:40,}}>
+      <TouchableOpacity onPress={()=> navigation.navigate("ConsultationsScreen")} style={{width:'90%', height:80, backgroundColor:'#000', borderRadius:40,}}>
+          <View style={{borderRadius:40,}}>
             <ImageBackground source={require('../assets/cons.png')} style={{width:'100%', height:'100%', justifyContent:'space-around', alignItems:'center', flexDirection:'row',}} imageStyle={{ borderRadius:40, opacity:0.6,}}>
               <Text style={{color:'#fff', fontSize:25, fontWeight:600, textTransform:'uppercase',}}>consultations</Text> 
               <Image source={require('../assets/arrow-right.png')} style={{width:30, height:30,}}/>
             </ImageBackground>
           </View>
+      </TouchableOpacity>
           </View>
       </View>
     );

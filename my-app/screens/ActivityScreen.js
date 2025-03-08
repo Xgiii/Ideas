@@ -48,12 +48,15 @@ const chartConfig = {
   },
 };
 
-const ActivityScreen = () => {
+const ActivityScreen = ({navigation}) => {
   return (
     <View style={styles.container}>
       {/* Tytuł */}
+      <View style={{flexDirection:'row', width:'100%', justifyContent:'space-between',}}>
       <Text style={styles.title}>Statistics</Text>
-
+      <Button title='back' color='#fff' onPress={()=>navigation.navigate('Main')}/>
+      </View>
+      
       {/* Wykres */}
       <View style={styles.chartContainer}>
         <LineChart
@@ -106,7 +109,6 @@ const styles = StyleSheet.create({
     backgroundColor:'#5c9ae6',
   },
   title: {
-    width:'100%',
     fontSize: 30,
     fontWeight: 'bold',
     marginBottom: 20,
