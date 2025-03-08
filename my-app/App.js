@@ -1,29 +1,63 @@
-import { StatusBar } from 'expo-status-bar';
-import { useState } from 'react';
-import { StyleSheet, Text, View, TextInput, Button } from 'react-native';
-import LoginScreen from './screens/LoginScreen';
-import MainScreen from './screens/MainScreen';
-import ActivityScreen from './screens/ActivityScreen';
+import LoginScreen from "./screens/LoginScreen";
+import MainScreen from "./screens/MainScreen";
+import ActivityScreen from "./screens/ActivityScreen";
+import { NavigationContainer } from "@react-navigation/native";
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import { useEffect, useState } from 'react';
+import { onAuthStateChanged } from "firebase/auth";
+import { FIREBASE_AUTH } from "./FirebaseConfig";
 
-export default function App() {
+const Stack = createNativeStackNavigator();
 
-  const [logged, isLogged] = useState(false);
+const InsideStack = createNativeStackNavigator();
 
-  function onClickedButton(){
-    isLogged(true);
-  }
-
+function InsideLayout() {
   return (
-  
-      <View style={styles.container}>
-          {logged ? <ActivityScreen /> : <LoginScreen buttonDown={onClickedButton} />}
-      </View>
- 
+    <InsideStack.Navigator>
+      <InsideStack.Screen
+        name='Main'
+        component={MainScreen}
+        options={{ headerShown: false }}
+      />
+      <InsideStack.Screen
+        name='Activity'
+        component={ActivityScreen}
+        options={{ headerShown: false }}
+      />
+    </InsideStack.Navigator>
   );
 }
-const styles = StyleSheet.create({
-  container: {
-      flex: 1,
-  },
-});
 
+export default function App() {
+  const [user, setUser] = useState(null);
+  console.log(user);
+  
+
+  useEffect(() => {
+    onAuthStateChanged(FIREBASE_AUTH, (user) => {
+      if (user) {
+        setUser(user);
+      }
+    })
+  }, [user])
+
+  return (
+    <NavigationContainer>
+      <Stack.Navigator initialRouteName='Login'>
+        {user ? (
+          <Stack.Screen
+            name='Inside'
+            component={InsideLayout}
+            options={{ headerShown: false }}
+          />
+        ) : (
+          <Stack.Screen
+            name='Login'
+            component={LoginScreen}
+            options={{ headerShown: false }}
+          />
+        )}
+      </Stack.Navigator>
+    </NavigationContainer>
+  );
+}
