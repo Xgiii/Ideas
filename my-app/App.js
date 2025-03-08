@@ -1,23 +1,32 @@
-import React, { useState } from 'react';
-import { View, StyleSheet } from 'react-native';
-import { NavigationContainer } from '@react-navigation/native';
-import { createStackNavigator } from '@react-navigation/stack';
-import MainScreen from './screens/MainScreen';
-import LoginScreen from './screens/LoginScreen';
-import ActivityScreen from './screens/ActivityScreen'; // Make sure this exists
+import LoginScreen from "./screens/LoginScreen";
+import MainScreen from "./screens/MainScreen";
+import ActivityScreen from "./screens/ActivityScreen";
+import { NavigationContainer } from "@react-navigation/native";
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import { useEffect, useState } from 'react';
+import { onAuthStateChanged } from "firebase/auth";
+import { FIREBASE_AUTH } from "./FirebaseConfig";
 
-const Stack = createStackNavigator();
+const Stack = createNativeStackNavigator();
+
 
 export default function App() {
-  const [logged, setLogged] = useState(false);
 
-  const onClickedButton = () => {
-    setLogged(true); // Set the user as logged in
-  };
+  const [user, setUser] = useState(null);
+  console.log(user);
+  
+
+  useEffect(() => {
+    onAuthStateChanged(FIREBASE_AUTH, (user) => {
+      if (user) {
+        setUser(user);
+      }
+    })
+  }, [user])
 
   return (
     <NavigationContainer>
-      {logged ? (
+      {user ? (
         <Stack.Navigator screenOptions={{ headerShown: false }}>
           <Stack.Screen name="Main" component={MainScreen} />
           <Stack.Screen name="ActivityScreen" component={ActivityScreen} />
@@ -27,17 +36,9 @@ export default function App() {
 
         </Stack.Navigator>
       ) : (
-        <LoginScreen buttonDown={onClickedButton} />
+        <LoginScreen />
       )}
     </NavigationContainer>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#5c9ae6',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});

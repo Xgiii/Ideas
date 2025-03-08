@@ -55,15 +55,17 @@ export default function MainScreen({navigation}) {
           </View>
       </TouchableOpacity>
           </View>
-      </View>
-    );
-  }
 
-  const styles = StyleSheet.create({
-    container: {
-      flex: 1,
-      backgroundColor: '#5c9ae6',
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-  });
+</View>
+)};
+
+
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "#5c9ae6",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+});
