@@ -1,6 +1,5 @@
-import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, Text, View, TextInput, Button, Image, ImageBackground, TouchableOpacity } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { FIREBASE_AUTH } from "../FirebaseConfig";
 
 export default function MainScreen({navigation}) {
 
@@ -54,9 +53,16 @@ export default function MainScreen({navigation}) {
             </ImageBackground>
           </View>
       </TouchableOpacity>
+
+      <Button
+          title='SIGN OUT'
+          color='#55d'
+          onPress={() => FIREBASE_AUTH.signOut()}
+        />
+
           </View>
 
-</View>
+</View>  
 )};
 
 

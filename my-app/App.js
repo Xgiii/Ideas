@@ -1,6 +1,7 @@
 import LoginScreen from "./screens/LoginScreen";
 import MainScreen from "./screens/MainScreen";
 import ActivityScreen from "./screens/ActivityScreen";
+import ConsultationScreen from "./screens/ConsultationScreen";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { useEffect, useState } from 'react';
@@ -32,7 +33,7 @@ export default function App() {
           <Stack.Screen name="ActivityScreen" component={ActivityScreen} />
           <Stack.Screen name="ExcercisesScreen" component={ActivityScreen} />
           <Stack.Screen name="PlansScreen" component={ActivityScreen} />
-          <Stack.Screen name="ConsultationsScreen" component={ActivityScreen} />
+          <Stack.Screen name="ConsultationsScreen" component={ConsultationScreen} />
 
         </Stack.Navigator>
       ) : (
