@@ -18,7 +18,7 @@ export default function MainScreen({navigation}) {
         </View>
         <View style={{flex:3, gap:20, alignItems:'center', width:'100%'}}>
 
-      <TouchableOpacity onPress={()=> navigation.navigate("ExcercisesScreen")} style={{width:'90%', height:80, backgroundColor:'#000', borderRadius:40,}}>
+      <TouchableOpacity onPress={()=> navigation.navigate("ExcerciseScreen")} style={{width:'90%', height:80, backgroundColor:'#000', borderRadius:40,}}>
          <View style={{ borderRadius:40,}}>
             <ImageBackground source={require('../assets/gym.jpeg')} style={{width:'100%', height:'100%', justifyContent:'space-around', alignItems:'center', flexDirection:'row',}} imageStyle={{ borderRadius:40, opacity:0.6,}}>
               <Text style={{color:'#fff', fontSize:25, fontWeight:600, textTransform:'uppercase',}}>excercises         </Text> 

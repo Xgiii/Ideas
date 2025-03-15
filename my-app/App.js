@@ -7,6 +7,7 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { useEffect, useState } from 'react';
 import { onAuthStateChanged } from "firebase/auth";
 import { FIREBASE_AUTH } from "./FirebaseConfig";
+import ExerciseScreen from "./screens/ExcerciseScreen";
 
 const Stack = createNativeStackNavigator();
 
@@ -31,7 +32,7 @@ export default function App() {
         <Stack.Navigator screenOptions={{ headerShown: false }}>
           <Stack.Screen name="Main" component={MainScreen} />
           <Stack.Screen name="ActivityScreen" component={ActivityScreen} />
-          <Stack.Screen name="ExcercisesScreen" component={ActivityScreen} />
+          <Stack.Screen name="ExcerciseScreen" component={ExerciseScreen} />
           <Stack.Screen name="PlansScreen" component={ActivityScreen} />
           <Stack.Screen name="ConsultationsScreen" component={ConsultationScreen} />
 

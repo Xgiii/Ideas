@@ -6,14 +6,16 @@ const images = {
   "doc1.jpg": require('../assets/doc1.jpg'),
   "doc2.jpg": require('../assets/doc2.jpg'),
   "doc3.jpg": require('../assets/doc3.jpg'),
+  "doc4.jpg": require('../assets/doc4.jpg'),
+  "doc5.png": require('../assets/doc5.png'),
 };
 
 const doctors = [
   { id: "1", name: "Dr. John Smith", specialty: "Cardiologist", meetLink: "https://meet.google.com/abc-defg-hij", image: 'doc1.jpg', rating: 4.5 },
   { id: "2", name: "Dr. Ignes Solar", specialty: "Neurologist", meetLink: "https://meet.google.com/xyz-1234-567", image: 'doc2.jpg', rating: 4.7 },
   { id: "3", name: "Dr. Tomasz Nowak", specialty: "Practitioner", meetLink: "https://meet.google.com/uvw-6789-xyz", image: 'doc3.jpg', rating: 4.3 },
-  { id: "4", name: "Dr. Maurice Pena", specialty: "Practitioner", meetLink: "https://meet.google.com/uvw-6789-xyz", image: 'doc3.jpg', rating: 4.3 },
-  { id: "5", name: "Dr. Diogo Costa", specialty: "Suregon", meetLink: "https://meet.google.com/uvw-6789-xyz", image: 'doc3.jpg', rating: 4.3 },
+  { id: "4", name: "Dr. Maurice Pena", specialty: "Practitioner", meetLink: "https://meet.google.com/uvw-6789-xyz", image: 'doc4.jpg', rating: 4.3 },
+  { id: "5", name: "Dr. Diogo Costa", specialty: "Suregon", meetLink: "https://meet.google.com/uvw-6789-xyz", image: 'doc5.png', rating: 4.3 },
 ];
 
 const DoctorListScreen = ({navigation}) => {
