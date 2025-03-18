@@ -61,7 +61,6 @@ const ExerciseScreen = ({navigation}) => {
     setExpandedCategory(expandedCategory === category ? null : category);
   };
 
-  
 
   const openExerciseModal = (exercise) => {
     setSelectedExercise(exercise);
@@ -71,6 +70,7 @@ const ExerciseScreen = ({navigation}) => {
   const addExerciseToTraining = () => {
     if (selectedExercise && exerciseCount) {
       setTrainings([...trainings, { ...selectedExercise, count: parseInt(exerciseCount) }]);
+      selectedExercise.completed = true;
       setSelectedExercise(null);
     }
   };
