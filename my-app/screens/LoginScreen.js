@@ -12,12 +12,15 @@ import { FIREBASE_AUTH } from "../FirebaseConfig";
 import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
+  updateProfile,
 } from "firebase/auth";
 
 export default function LoginScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
+  const [isSignUp, setIsSignUp] = useState(false);
 
   const auth = FIREBASE_AUTH;
 
@@ -26,7 +29,7 @@ export default function LoginScreen() {
     try {
       await signInWithEmailAndPassword(auth, email, password);
     } catch (err) {
-      alert("Sign in failed" + err.message);
+      alert("Sign in failed: " + err.message);
     }
     setLoading(false);
   }
@@ -34,11 +37,15 @@ export default function LoginScreen() {
   async function signUp() {
     setLoading(true);
     try {
-      await createUserWithEmailAndPassword(auth, email, password);
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      // Update the user's profile with their name
+      await updateProfile(userCredential.user, {
+        displayName: name
+      });
+      alert("Sign up successful!");
     } catch (err) {
-      alert("Sign up failed" + err.message);
+      alert("Sign up failed: " + err.message);
     }
-    alert("Sign up successful!");
     setLoading(false);
   }
 
@@ -72,6 +79,27 @@ export default function LoginScreen() {
           margin: 0,
         }}
       >
+        {isSignUp && (
+          <TextInput
+            placeholder='Name'
+            autoCapitalize='words'
+            style={{
+              fontSize: 20,
+              marginBottom: 15,
+              borderColor: "#fff",
+              borderWidth: 2,
+              width: 200,
+              textAlign: "center",
+              borderRadius: 25,
+              paddingHorizontal: 15,
+              paddingVertical: 10,
+              color: "#fff",
+              marginTop: 40,
+            }}
+            onChangeText={(text) => setName(text)}
+            value={name}
+          />
+        )}
         <TextInput
           placeholder='Email'
           autoCapitalize='none'
@@ -86,7 +114,7 @@ export default function LoginScreen() {
             paddingHorizontal: 15,
             paddingVertical: 10,
             color: "#fff",
-            marginTop: 40,
+            marginTop: isSignUp ? 0 : 40,
           }}
           onChangeText={(text) => setEmail(text)}
           value={email}
@@ -114,15 +142,23 @@ export default function LoginScreen() {
         <ActivityIndicator size='large' color='#fff' />
       ) : (
         <>
-          <Button title='LOG IN' color='#55d' onPress={signIn} />
-          <Button title='SIGN UP' color='#55d' onPress={signUp} />
+          <Button 
+            title={isSignUp ? 'SIGN UP' : 'LOG IN'} 
+            color='#55d' 
+            onPress={isSignUp ? signUp : signIn} 
+          />
+          <Button 
+            title={isSignUp ? 'Switch to Login' : 'Switch to Sign Up'} 
+            color='#55d' 
+            onPress={() => setIsSignUp(!isSignUp)} 
+          />
         </>
       )}
 
       <View style={{ width: 300, marginTop: 100 }}>
         <Text style={{ color: "#fff", fontSize: 15, fontWeight: "300" }}>
-          “Our greatest glory is not in never falling, but in rising up every
-          time we fail.” – Ralph Waldo Emerson.
+          "Our greatest glory is not in never falling, but in rising up every
+          time we fail." – Ralph Waldo Emerson.
         </Text>
       </View>
     </View>

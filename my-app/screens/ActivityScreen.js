@@ -1,7 +1,9 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Dimensions, Image, Button } from 'react-native';
 import { LineChart } from 'react-native-chart-kit';
 import { Dimensions as RNDimensions } from 'react-native';
+import { FIREBASE_AUTH, FIREBASE_DB } from '../FirebaseConfig';
+import { collection, query, where, getDocs, Timestamp } from 'firebase/firestore';
 
 // Wymiary wykresu
 const screenWidth = RNDimensions.get('window').width;
@@ -27,16 +29,6 @@ const getLast7Days = () => {
 // Generowanie etykiet dla ostatnich 7 dni
 const labels = getLast7Days();
 
-const data = {
-  labels: labels, // Ostatnie 7 dni
-  datasets: [
-    {
-      data: [2, 4, 3, 5, 6, 2, 4], // Liczba treningów dla każdego dnia
-      strokeWidth: 2, // Grubość linii
-    },
-  ],
-};
-
 const chartConfig = {
   backgroundColor: '#304485',
   backgroundGradientFrom: '#304485',
@@ -49,51 +41,151 @@ const chartConfig = {
 };
 
 const ActivityScreen = ({navigation}) => {
+  const [trainingsThisWeek, setTrainingsThisWeek] = useState(0);
+  const [painLevel, setPainLevel] = useState('Low');
+  const [progressRatio, setProgressRatio] = useState('Normal');
+  const [consultations, setConsultations] = useState(0);
+  const [chartData, setChartData] = useState([0, 0, 0, 0, 0, 0, 0]);
+
+  useEffect(() => {
+    fetchStatistics();
+  }, []);
+
+  const fetchStatistics = async () => {
+    try {
+      const user = FIREBASE_AUTH.currentUser;
+      if (!user) return;
+
+      // Get trainings from the last 7 days
+      const trainingsRef = collection(FIREBASE_DB, 'trainings');
+      const weekAgo = new Date();
+      weekAgo.setDate(weekAgo.getDate() - 7);
+      
+      const q = query(
+        trainingsRef,
+        where('userId', '==', user.uid),
+        where('date', '>=', Timestamp.fromDate(weekAgo))
+      );
+      
+      const querySnapshot = await getDocs(q);
+      const trainings = [];
+      querySnapshot.forEach((doc) => {
+        trainings.push(doc.data());
+      });
+
+      // Calculate trainings per day for the chart
+      const dailyTrainings = new Array(7).fill(0);
+      trainings.forEach(training => {
+        const date = training.date.toDate();
+        const dayIndex = 6 - Math.floor((new Date() - date) / (1000 * 60 * 60 * 24));
+        if (dayIndex >= 0 && dayIndex < 7) {
+          dailyTrainings[dayIndex]++;
+        }
+      });
+      setChartData(dailyTrainings);
+
+      // Set total trainings this week
+      setTrainingsThisWeek(trainings.length);
+
+      // Calculate average pain level based on training intensity
+      const painLevels = trainings.map(t => {
+        const intensity = t.intensity || 'low';
+        switch(intensity.toLowerCase()) {
+          case 'high':
+            return 'Strong';
+          case 'medium':
+            return 'Medium';
+          default:
+            return 'Low';
+        }
+      });
+      const painCounts = painLevels.reduce((acc, level) => {
+        acc[level] = (acc[level] || 0) + 1;
+        return acc;
+      }, {});
+      const mostFrequentPain = Object.entries(painCounts)
+        .sort((a, b) => b[1] - a[1])[0]?.[0] || 'Low';
+      setPainLevel(mostFrequentPain);
+
+      // Calculate progress ratio based on training frequency
+      const progress = trainings.length >= 20 ? 'Fast' : 
+                      trainings.length >= 10 ? 'Normal' : 'Slow';
+      setProgressRatio(progress);
+
+      // Get consultations count
+      const consultationsRef = collection(FIREBASE_DB, 'consultations');
+      const consultationsQuery = query(
+        consultationsRef,
+        where('userId', '==', user.uid)
+      );
+      const consultationsSnapshot = await getDocs(consultationsQuery);
+      setConsultations(consultationsSnapshot.size);
+
+    } catch (error) {
+      console.error('Error fetching statistics:', error);
+    }
+  };
+
+  const data = {
+    labels: labels,
+    datasets: [
+      {
+        data: chartData,
+        strokeWidth: 2,
+      },
+    ],
+  };
+
   return (
     <View style={styles.container}>
       {/* Tytuł */}
       <View style={{flexDirection:'row', width:'100%', justifyContent:'space-between',}}>
-      <Text style={styles.title}>Statistics</Text>
-      <Button title='back' color='#fff' onPress={()=>navigation.navigate('Main')}/>
+        <Text style={styles.title}>Statistics</Text>
+        <Button title='back' color='#fff' onPress={()=>navigation.navigate('Main')}/>
       </View>
       
       {/* Wykres */}
       <View style={styles.chartContainer}>
         <LineChart
           data={data}
-          width={screenWidth - 40} // Szerokość wykresu
-          height={240} // Wysokość wykresu
+          width={screenWidth - 40}
+          height={240}
           chartConfig={chartConfig}
-          bezier // Efekt wygładzania linii
+          bezier
           style={{borderRadius:10,}}
         />
       </View>
 
       {/* Statystyki użytkownika */}
       <View style={styles.statsContainer}>
-
         <View style={styles.statText}>
-          <Image style={styles.statImage} source={require('../assets/weightlifter.png')}/><Text style={styles.statInnerText2}>20+</Text><Text style={styles.statInnerText}>Trainings this week</Text>
+          <Image style={styles.statImage} source={require('../assets/weightlifter.png')}/>
+          <Text style={styles.statInnerText2}>{trainingsThisWeek}+</Text>
+          <Text style={styles.statInnerText}>Trainings this week</Text>
         </View>
 
         <View style={styles.statText}>
-          <Image style={styles.statImage} source={require('../assets/pain.png')}/><Text style={styles.statInnerText2}>Medium</Text><Text style={styles.statInnerText}>Pain levels</Text>
+          <Image style={styles.statImage} source={require('../assets/pain.png')}/>
+          <Text style={styles.statInnerText2}>{painLevel}</Text>
+          <Text style={styles.statInnerText}>Pain levels</Text>
         </View>
 
         <View style={styles.statText}>
-          <Image style={styles.statImage} source={require('../assets/progress.png')}/><Text style={styles.statInnerText2}>Fast</Text><Text style={styles.statInnerText}>Progress ratio</Text>
+          <Image style={styles.statImage} source={require('../assets/progress.png')}/>
+          <Text style={styles.statInnerText2}>{progressRatio}</Text>
+          <Text style={styles.statInnerText}>Progress ratio</Text>
         </View>
 
         <View style={styles.statText}>
-          <Image style={styles.statImage} source={require('../assets/doctor.png')}/><Text style={styles.statInnerText2}>4</Text><Text style={styles.statInnerText}>Consultations</Text>
+          <Image style={styles.statImage} source={require('../assets/doctor.png')}/>
+          <Text style={styles.statInnerText2}>{consultations}</Text>
+          <Text style={styles.statInnerText}>Consultations</Text>
         </View>
 
-    
         <View style={{width:'100%', backgroundColor:'#304485', flexDirection:'row', justifyContent:'space-around', padding:20, borderRadius:10,}}>
           <Text style={{color:'#fff', fontSize:20, fontWeight:'bold',}}>Share your progress</Text>
           <Image style={{width:30, height:30,}} source={require('../assets/share.png')}/>
         </View>
-   
       </View>
     </View>
   );

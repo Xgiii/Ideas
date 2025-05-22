@@ -12,31 +12,38 @@ import PlansScreen from "./screens/PlansScreen";
 
 const Stack = createNativeStackNavigator();
 
-
 export default function App() {
-
   const [user, setUser] = useState(null);
-  console.log(user);
-  
+  const [userName, setUserName] = useState("");
 
   useEffect(() => {
-    onAuthStateChanged(FIREBASE_AUTH, (user) => {
+    const unsubscribe = onAuthStateChanged(FIREBASE_AUTH, (user) => {
       if (user) {
         setUser(user);
+        setUserName(user.displayName || user.email);
+      } else {
+        setUser(null);
+        setUserName("");
       }
-    })
-  }, [user])
+    });
+
+    // Cleanup subscription on unmount
+    return () => unsubscribe();
+  }, []);
 
   return (
     <NavigationContainer>
       {user ? (
         <Stack.Navigator screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="Main" component={MainScreen} />
+          <Stack.Screen 
+            name="Main" 
+            component={MainScreen} 
+            initialParams={{ userName: userName }}
+          />
           <Stack.Screen name="ActivityScreen" component={ActivityScreen} />
           <Stack.Screen name="ExcerciseScreen" component={ExerciseScreen} />
           <Stack.Screen name="PlansScreen" component={PlansScreen} />
           <Stack.Screen name="ConsultationsScreen" component={ConsultationScreen} />
-
         </Stack.Navigator>
       ) : (
         <LoginScreen />
