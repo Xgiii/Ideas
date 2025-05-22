@@ -7,8 +7,8 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { useEffect, useState } from 'react';
 import { onAuthStateChanged } from "firebase/auth";
 import { FIREBASE_AUTH } from "./FirebaseConfig";
-import ExerciseScreen from "./screens/ExcerciseScreen";
 import PlansScreen from "./screens/PlansScreen";
+import ExerciseScreen from "./screens/ExcerciseScreen";
 
 const Stack = createNativeStackNavigator();
 

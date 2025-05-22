@@ -79,8 +79,8 @@ export default function MainScreen({navigation}) {
                 });
                 setStreak(1);
                 setLastActivityDate(now);
-            } else if (hoursSinceLastActivity >= 24) {
-                // Increment streak if at least 24 hours have passed
+            } else if (streak === 0 || hoursSinceLastActivity >= 24) {
+                // Increment streak if it's the first streak (streak === 0) or if 24 hours have passed
                 const newStreak = streak + 1;
                 await setDoc(doc(FIREBASE_DB, 'userStreaks', userId), {
                     streak: newStreak,

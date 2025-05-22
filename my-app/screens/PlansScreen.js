@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, ImageBackground, Button } from "react-native";
 import { FIREBASE_DB, FIREBASE_AUTH } from "../FirebaseConfig";
-import { collection, getDocs, addDoc, query, where } from "firebase/firestore";
+import { collection, getDocs } from "firebase/firestore";
 
 export default function PlansScreen({ navigation }) {
     const [plans, setPlans] = useState([]);
@@ -17,23 +17,11 @@ export default function PlansScreen({ navigation }) {
             const plansRef = collection(FIREBASE_DB, 'workoutPlans');
             const querySnapshot = await getDocs(plansRef);
             
-            if (querySnapshot.empty) {
-                // If no plans exist, create default plans
-                await createDefaultPlans();
-                // Reload plans after creation
-                const newQuerySnapshot = await getDocs(plansRef);
-                const loadedPlans = [];
-                newQuerySnapshot.forEach((doc) => {
-                    loadedPlans.push({ id: doc.id, ...doc.data() });
-                });
-                setPlans(loadedPlans);
-            } else {
-                const loadedPlans = [];
-                querySnapshot.forEach((doc) => {
-                    loadedPlans.push({ id: doc.id, ...doc.data() });
-                });
-                setPlans(loadedPlans);
-            }
+            const loadedPlans = [];
+            querySnapshot.forEach((doc) => {
+                loadedPlans.push({ id: doc.id, ...doc.data() });
+            });
+            setPlans(loadedPlans);
         } catch (error) {
             console.error("Error loading plans:", error);
         } finally {
@@ -41,60 +29,7 @@ export default function PlansScreen({ navigation }) {
         }
     };
 
-    const createDefaultPlans = async () => {
-        const defaultPlans = [
-            {
-                name: "3x Weekly Plan",
-                frequency: 3,
-                description: "Perfect for beginners or those with busy schedules",
-                exercises: [
-                    { name: "Shoulder Rolls", count: 10, sets: 3 },
-                    { name: "Arm Circles", count: 15, sets: 3 },
-                    { name: "Seated Knee Extensions", count: 12, sets: 3 },
-                    { name: "Cat-Cow Stretch", count: 10, sets: 3 }
-                ],
-                image: require('../assets/gym.jpeg')
-            },
-            {
-                name: "4x Weekly Plan",
-                frequency: 4,
-                description: "Balanced plan for consistent progress",
-                exercises: [
-                    { name: "Shoulder Rolls", count: 12, sets: 3 },
-                    { name: "Arm Circles", count: 15, sets: 3 },
-                    { name: "Resistance Band Pulls", count: 10, sets: 3 },
-                    { name: "Seated Knee Extensions", count: 12, sets: 3 },
-                    { name: "Step-ups", count: 10, sets: 3 },
-                    { name: "Cat-Cow Stretch", count: 10, sets: 3 }
-                ],
-                image: require('../assets/gym.jpeg')
-            },
-            {
-                name: "5x Weekly Plan",
-                frequency: 5,
-                description: "Intensive plan for maximum results",
-                exercises: [
-                    { name: "Shoulder Rolls", count: 15, sets: 3 },
-                    { name: "Arm Circles", count: 15, sets: 3 },
-                    { name: "Resistance Band Pulls", count: 12, sets: 3 },
-                    { name: "Seated Knee Extensions", count: 15, sets: 3 },
-                    { name: "Step-ups", count: 12, sets: 3 },
-                    { name: "Lunges", count: 10, sets: 3 },
-                    { name: "Cat-Cow Stretch", count: 12, sets: 3 },
-                    { name: "Superman Exercise", count: 10, sets: 3 }
-                ],
-                image: require('../assets/gym.jpeg')
-            }
-        ];
-
-        const plansRef = collection(FIREBASE_DB, 'workoutPlans');
-        for (const plan of defaultPlans) {
-            await addDoc(plansRef, plan);
-        }
-    };
-
     const selectPlan = (plan) => {
-        // Navigate to exercise screen with selected plan
         navigation.navigate('ExcerciseScreen', { selectedPlan: plan });
     };
 
@@ -109,6 +44,11 @@ export default function PlansScreen({ navigation }) {
                 <View style={styles.loadingContainer}>
                     <Text style={styles.loadingText}>Loading plans...</Text>
                 </View>
+            ) : plans.length === 0 ? (
+                <View style={styles.emptyContainer}>
+                    <Text style={styles.emptyText}>No workout plans available.</Text>
+                    <Text style={styles.emptySubText}>Please contact your trainer to get a personalized plan.</Text>
+                </View>
             ) : (
                 <ScrollView style={styles.scrollView}>
                     {plans.map((plan) => (
@@ -118,7 +58,7 @@ export default function PlansScreen({ navigation }) {
                             onPress={() => selectPlan(plan)}
                         >
                             <ImageBackground
-                                source={plan.image}
+                                source={require('../assets/gym.jpeg')}
                                 style={styles.planBackground}
                                 imageStyle={styles.planBackgroundImage}
                             >
@@ -210,5 +150,24 @@ const styles = StyleSheet.create({
     loadingText: {
         fontSize: 18,
         color: '#fff',
+    },
+    emptyContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 20,
+    },
+    emptyText: {
+        fontSize: 20,
+        color: '#fff',
+        fontWeight: 'bold',
+        textAlign: 'center',
+        marginBottom: 10,
+    },
+    emptySubText: {
+        fontSize: 16,
+        color: '#fff',
+        textAlign: 'center',
+        opacity: 0.8,
     },
 });

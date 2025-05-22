@@ -1,49 +1,177 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, FlatList, TouchableOpacity, Image, StyleSheet, Modal, Button, ScrollView, TextInput, Alert } from "react-native";
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Modal, Button, Alert, TextInput } from "react-native";
 import { AntDesign } from '@expo/vector-icons';
 import { ProgressBar } from 'react-native-paper';
 import { FIREBASE_DB, FIREBASE_AUTH } from '../FirebaseConfig';
 import { collection, getDocs, addDoc, query, where, orderBy, Timestamp, doc, getDoc, setDoc } from 'firebase/firestore';
 
-// Sample static data
-const exercises = [
-  {
-    category: "Shoulder",
-    image: require("../assets/shoulder.jpg"),
-    exercises: [
-      { name: "Shoulder Rolls", difficulty: "Easy", description: "Roll your shoulders forward and backward slowly.", completed: false },
-      { name: "Arm Circles", difficulty: "Medium", description: "Make large circles with your arms extended.", completed: false },
-      { name: "Resistance Band Pulls", difficulty: "Hard", description: "Use a resistance band to strengthen shoulder muscles.", completed: false },
-    ],
-  },
-  {
-    category: "Knee",
-    image: require("../assets/knee.jpg"),
-    exercises: [
-      { name: "Seated Knee Extensions", difficulty: "Easy", description: "Extend your knee while sitting to strengthen your quads.", completed: false },
-      { name: "Step-ups", difficulty: "Medium", description: "Step up onto a platform with alternating legs.", completed: false },
-      { name: "Lunges", difficulty: "Hard", description: "Perform lunges to improve knee stability and strength.", completed: false },
-    ],
-  },
-  {
-    category: "Back",
-    image: require("../assets/back.jpg"),
-    exercises: [
-      { name: "Cat-Cow Stretch", difficulty: "Easy", description: "Alternate between arching and rounding your back.", completed: false },
-      { name: "Superman Exercise", difficulty: "Medium", description: "Lift your arms and legs off the floor while lying on your stomach.", completed: false },
-      { name: "Deadlifts", difficulty: "Hard", description: "Perform deadlifts with proper form to strengthen your lower back.", completed: false },
-    ],
-  },
-  {
-    category: "Ankle",
-    image: require("../assets/ankle.jpg"),
-    exercises: [
-      { name: "Ankle Circles", difficulty: "Easy", description: "Rotate your ankle in circular motions.", completed: false },
-      { name: "Heel Raises", difficulty: "Medium", description: "Lift your heels off the ground while standing.", completed: false },
-      { name: "Single-Leg Balance", difficulty: "Hard", description: "Stand on one foot to improve ankle stability.", completed: false },
-    ],
-  },
-];
+// Exercise List Component
+const ExerciseList = ({ exercises, expandedCategory, toggleExpand, openExerciseModal }) => {
+  const getImageSource = (imageNumber) => {
+    // Map numbers to specific images
+    const imageMap = {
+      1: require('../assets/ankle.jpg'),
+      2: require('../assets/shoulder.jpg'),
+      3: require('../assets/back.jpg'),
+      4: require('../assets/knee.jpg'),
+    };
+    
+    return imageMap[imageNumber] || require('../assets/gym.jpeg'); // Default to gym image if number not found
+  };
+
+  console.log(exercises);
+  
+
+  return (
+    <>
+      {exercises.map((item, index) => (
+        <View key={item.id || index} style={styles.categoryContainer}>
+          <TouchableOpacity onPress={() => toggleExpand(item.category)} style={styles.tile}>
+            <Image source={getImageSource(item.image)} style={styles.backgroundImage} />
+            <Text style={styles.categoryTitle}>{item.category}</Text>
+            <AntDesign name={expandedCategory === item.category ? "up" : "right"} size={24} color="black" style={styles.arrow} />
+          </TouchableOpacity>
+          {expandedCategory === item.category && (
+            <View style={styles.exerciseList}>
+              {item.exercises.map((exercise, index) => (
+                <TouchableOpacity key={index} style={styles.exerciseItem} onPress={() => openExerciseModal(exercise)}>
+                  <View style={styles.exerciseInfo}>
+                    <Text style={styles.exerciseText}>{exercise.name}</Text>
+                    {exercise.completed && <AntDesign name="checkcircle" size={20} color="green" style={styles.completedIcon} />}
+                  </View>
+                  <ProgressBar progress={exercise.difficulty === "Easy" ? 0.3 : exercise.difficulty === "Medium" ? 0.6 : 1.0} color={difficultyColors[exercise.difficulty]} style={styles.progressBar} />
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
+        </View>
+      ))}
+    </>
+  );
+};
+
+// Training Panel Component
+const TrainingPanel = ({ trainings, removeExerciseFromTraining, showExerciseDetails, saveTraining }) => {
+  return (
+    <View style={styles.trainingPanel}>
+      <Text style={styles.panelTitle}>Today's Trainings</Text>
+      <ScrollView>
+        {trainings.length > 0 ? (
+          trainings.map((training, index) => (
+            <View key={index} style={styles.trainingItem}>
+              <View style={styles.trainingItemContent}>
+                <View style={styles.trainingHeader}>
+                  <TouchableOpacity 
+                    onPress={() => showExerciseDetails(training)}
+                    style={styles.exerciseNameContainer}
+                  >
+                    <Text style={styles.trainingExerciseText}>{training.name} - {training.count}x</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity 
+                    onPress={() => removeExerciseFromTraining(index)}
+                    style={styles.deleteButton}
+                  >
+                    <AntDesign name="delete" size={20} color="#ff4444" />
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </View>
+          ))
+        ) : (
+          <View style={styles.emptyStateContainer}>
+            <Text style={styles.emptyStateText}>No exercises added yet. Add some exercises to start your training!</Text>
+          </View>
+        )}
+      </ScrollView>
+      <Button title="Save Training" onPress={saveTraining} />
+    </View>
+  );
+};
+
+// Last Trainings Panel Component
+const LastTrainingsPanel = ({ lastTrainings, loadTrainingToToday }) => {
+  return (
+    <View style={styles.lastTrainingsPanel}>
+      <Text style={styles.panelTitle}>Last 3 Trainings</Text>
+      <ScrollView>
+        {lastTrainings.slice(0, 3).map((training, index) => (
+          <TouchableOpacity 
+            key={training.id || index} 
+            style={styles.trainingItem}
+            onPress={() => loadTrainingToToday(training)}
+          >
+            <View style={styles.trainingItemContent}>
+              <View style={styles.trainingHeader}>
+                <Text style={styles.trainingDate}>{training.displayDate}</Text>
+                <AntDesign name="reload1" size={20} color="#5c9ae6" />
+              </View>
+              {training.exercises.map((exercise, i) => (
+                <Text key={i} style={styles.trainingExerciseText}>
+                  - {exercise.name} ({exercise.count}x)
+                </Text>
+              ))}
+            </View>
+          </TouchableOpacity>
+        ))}
+        {lastTrainings.length === 0 && (
+          <View style={styles.emptyStateContainer}>
+            <Text style={styles.emptyStateText}>No training history yet. Start your first training!</Text>
+          </View>
+        )}
+      </ScrollView>
+    </View>
+  );
+};
+
+// Exercise Details Modal Component
+const ExerciseDetailsModal = ({ selectedExerciseDetails, onClose }) => {
+  if (!selectedExerciseDetails) return null;
+  
+  return (
+    <Modal visible={!!selectedExerciseDetails} transparent animationType="slide">
+      <View style={styles.modalContainer}>
+        <View style={styles.modalContent}>
+          <Text style={styles.modalTitle}>{selectedExerciseDetails.name}</Text>
+          <Text style={styles.exerciseDescription}>
+            {selectedExerciseDetails.description || 'No description available'}
+          </Text>
+          <Text style={styles.exerciseDifficulty}>
+            Difficulty: {selectedExerciseDetails.difficulty || 'Medium'}
+          </Text>
+          <Text style={styles.exerciseCount}>
+            Count: {selectedExerciseDetails.count || 0}x
+          </Text>
+          <Button title="Close" onPress={onClose} />
+        </View>
+      </View>
+    </Modal>
+  );
+};
+
+// Add Exercise Modal Component
+const AddExerciseModal = ({ selectedExercise, exerciseCount, setExerciseCount, addExerciseToTraining, onClose }) => {
+  if (!selectedExercise) return null;
+
+  return (
+    <Modal visible={!!selectedExercise} transparent animationType="slide">
+      <View style={styles.modalContainer}>
+        <View style={styles.modalContent}>
+          <Text style={styles.modalTitle}>{selectedExercise.name}</Text>
+          <Text>{selectedExercise.description}</Text>
+          <TextInput
+            style={styles.input}
+            keyboardType="numeric"
+            placeholder="Enter count"
+            value={exerciseCount}
+            onChangeText={setExerciseCount}
+          />
+          <Button title="Add" onPress={addExerciseToTraining} />
+          <Button title="Close" onPress={onClose} />
+        </View>
+      </View>
+    </Modal>
+  );
+};
 
 const difficultyColors = {
   "Easy": "#4caf50",
@@ -59,24 +187,41 @@ const ExerciseScreen = ({navigation, route}) => {
   const [exerciseCount, setExerciseCount] = useState("");
   const [exercises, setExercises] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedExerciseDetails, setSelectedExerciseDetails] = useState(null);
+
+  console.log(selectedExerciseDetails);
 
   useEffect(() => {
     const loadData = async () => {
       try {
         setIsLoading(true);
-        await Promise.all([
-          loadExercises(),
-          loadUserTrainings()
-        ]);
+        await loadExercises();
+        await loadUserTrainings();
 
         // Check if a plan was selected from PlansScreen
         if (route.params?.selectedPlan) {
+          console.log("Selected plan:", route.params.selectedPlan);
+          console.log("Available exercises:", exercises);
+          
           const plan = route.params.selectedPlan;
-          // Convert plan exercises to training format
-          const planExercises = plan.exercises.map(exercise => ({
+          // Convert plan exercises to training format with full details
+          const planExercises = plan.exercises.map(exercise => {
+            // Find the full exercise details from our loaded exercises
+            const fullExercise = exercises.find(e => e.name === exercise.name);
+            console.log("Matching exercise:", fullExercise, "for plan exercise:", exercise);
+            
+            if (!fullExercise) {
+              console.log("No matching exercise found for:", exercise.name);
+            }
+            
+            return {
             ...exercise,
-            count: exercise.count || 0
-          }));
+              count: exercise.count || 0,
+              description: fullExercise?.description || 'No description available',
+              difficulty: fullExercise?.difficulty || 'Medium'
+            };
+          });
+          console.log("Processed plan exercises:", planExercises);
           setTrainings(planExercises);
         }
       } catch (error) {
@@ -90,6 +235,23 @@ const ExerciseScreen = ({navigation, route}) => {
     loadData();
   }, [route.params?.selectedPlan]);
 
+  // Separate useEffect to handle plan exercises when exercises are loaded
+  useEffect(() => {
+    if (route.params?.selectedPlan && exercises.length > 0) {
+      const plan = route.params.selectedPlan;
+      const planExercises = plan.exercises.map(exercise => {
+        const fullExercise = exercises.find(e => e.name === exercise.name);
+        return {
+          ...exercise,
+          count: exercise.count || 0,
+          description: fullExercise?.description || 'No description available',
+          difficulty: fullExercise?.difficulty || 'Medium'
+        };
+      });
+      setTrainings(planExercises);
+    }
+  }, [exercises, route.params?.selectedPlan]);
+
   const loadExercises = async () => {
     try {
       const exercisesRef = collection(FIREBASE_DB, 'exercises');
@@ -97,9 +259,16 @@ const ExerciseScreen = ({navigation, route}) => {
       const loadedExercises = [];
       
       querySnapshot.forEach((doc) => {
-        loadedExercises.push({ id: doc.id, ...doc.data() });
+        const data = doc.data();
+        console.log("Loading exercise from DB:", data);
+        loadedExercises.push({ 
+          id: doc.id, 
+          ...data,
+          exercises: data.exercises || []
+        });
       });
       
+      console.log("All loaded exercises:", loadedExercises);
       setExercises(loadedExercises);
     } catch (error) {
       console.error("Error loading exercises:", error);
@@ -188,7 +357,13 @@ const ExerciseScreen = ({navigation, route}) => {
 
   const addExerciseToTraining = () => {
     if (selectedExercise && exerciseCount) {
-      setTrainings([...trainings, { ...selectedExercise, count: parseInt(exerciseCount) }]);
+      const exerciseToAdd = {
+        ...selectedExercise,
+        count: parseInt(exerciseCount),
+        description: selectedExercise.description || 'No description available',
+        difficulty: selectedExercise.difficulty || 'Medium'
+      };
+      setTrainings([...trainings, exerciseToAdd]);
       selectedExercise.completed = true;
       setSelectedExercise(null);
     }
@@ -288,13 +463,48 @@ const ExerciseScreen = ({navigation, route}) => {
     // Convert the training exercises to the format needed for today's training
     const exercisesForToday = training.exercises.map(exercise => ({
       ...exercise,
-      count: exercise.count || 0 // Ensure count exists
+      count: exercise.count || 0, // Ensure count exists
+      description: exercise.description || 'No description available',
+      difficulty: exercise.difficulty || 'Medium'
     }));
     setTrainings(exercisesForToday);
   };
 
   const removeExerciseFromTraining = (indexToRemove) => {
     setTrainings(trainings.filter((_, index) => index !== indexToRemove));
+  };
+
+  const showExerciseDetails = (exercise) => {
+    console.log("Showing details for exercise:", exercise);
+    console.log("Available exercises:", exercises);
+    
+    // Find the full exercise details from the exercises array
+    const fullExercise = exercises.find(e => e.name === exercise.name);
+    console.log("Found full exercise:", fullExercise);
+    
+    if (fullExercise) {
+      setSelectedExerciseDetails({
+        ...exercise,
+        description: fullExercise.description,
+        difficulty: fullExercise.difficulty
+      });
+    } else {
+      // If we can't find the full exercise, try to find it in the original exercises array
+      const originalExercise = exercises.find(e => 
+        e.exercises && e.exercises.some(ex => ex.name === exercise.name)
+      );
+      
+      if (originalExercise) {
+        const matchingExercise = originalExercise.exercises.find(ex => ex.name === exercise.name);
+        setSelectedExerciseDetails({
+          ...exercise,
+          description: matchingExercise.description,
+          difficulty: matchingExercise.difficulty
+        });
+      } else {
+        setSelectedExerciseDetails(exercise);
+      }
+    }
   };
 
   return (
@@ -309,107 +519,39 @@ const ExerciseScreen = ({navigation, route}) => {
         </View>
       ) : (
         <ScrollView contentContainerStyle={styles.scrollContainer}>
-          {exercises.map((item, index) => (
-            <View key={item.id || index} style={styles.categoryContainer}>
-              <TouchableOpacity onPress={() => toggleExpand(item.category)} style={styles.tile}>
-                <Image source={item.image} style={styles.backgroundImage} />
-                <Text style={styles.categoryTitle}>{item.category}</Text>
-                <AntDesign name={expandedCategory === item.category ? "up" : "right"} size={24} color="black" style={styles.arrow} />
-              </TouchableOpacity>
-              {expandedCategory === item.category && (
-                <View style={styles.exerciseList}>
-                  {item.exercises.map((exercise, index) => (
-                    <TouchableOpacity key={index} style={styles.exerciseItem} onPress={() => openExerciseModal(exercise)}>
-                      <View style={styles.exerciseInfo}>
-                        <Text style={styles.exerciseText}>{exercise.name}</Text>
-                        {exercise.completed && <AntDesign name="checkcircle" size={20} color="green" style={styles.completedIcon} />}
-                      </View>
-                      <ProgressBar progress={exercise.difficulty === "Easy" ? 0.3 : exercise.difficulty === "Medium" ? 0.6 : 1.0} color={difficultyColors[exercise.difficulty]} style={styles.progressBar} />
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              )}
-            </View>
-          ))}
-          <View style={styles.trainingPanel}>
-            <Text style={styles.panelTitle}>Today's Trainings</Text>
-            <ScrollView>
-              {trainings.length > 0 ? (
-                trainings.map((training, index) => (
-                  <View key={index} style={styles.trainingItem}>
-                    <View style={styles.trainingItemContent}>
-                      <View style={styles.trainingHeader}>
-                        <Text style={styles.trainingExerciseText}>{training.name} - {training.count}x</Text>
-                        <TouchableOpacity 
-                          onPress={() => removeExerciseFromTraining(index)}
-                          style={styles.deleteButton}
-                        >
-                          <AntDesign name="delete" size={20} color="#ff4444" />
-                        </TouchableOpacity>
-                      </View>
-                    </View>
-                  </View>
-                ))
-              ) : (
-                <View style={styles.emptyStateContainer}>
-                  <Text style={styles.emptyStateText}>No exercises added yet. Add some exercises to start your training!</Text>
-                </View>
-              )}
-            </ScrollView>
-            <Button title="Save Training" onPress={saveTraining} />
-          </View>
-          <View style={styles.lastTrainingsPanel}>
-            <Text style={styles.panelTitle}>Last 3 Trainings</Text>
-            <ScrollView>
-              {lastTrainings.slice(0, 3).map((training, index) => (
-                <TouchableOpacity 
-                  key={training.id || index} 
-                  style={styles.trainingItem}
-                  onPress={() => loadTrainingToToday(training)}
-                >
-                  <View style={styles.trainingItemContent}>
-                    <View style={styles.trainingHeader}>
-                      <Text style={styles.trainingDate}>{training.displayDate}</Text>
-                      <AntDesign name="reload1" size={20} color="#5c9ae6" />
-                    </View>
-                    {training.exercises.map((exercise, i) => (
-                      <Text key={i} style={styles.trainingExerciseText}>
-                        - {exercise.name} ({exercise.count}x)
-                      </Text>
-                    ))}
-                  </View>
-                </TouchableOpacity>
-              ))}
-              {lastTrainings.length === 0 && (
-                <View style={styles.emptyStateContainer}>
-                  <Text style={styles.emptyStateText}>No training history yet. Start your first training!</Text>
-                </View>
-              )}
-            </ScrollView>
-          </View>
+          <ExerciseList 
+            exercises={exercises}
+            expandedCategory={expandedCategory}
+            toggleExpand={toggleExpand}
+            openExerciseModal={openExerciseModal}
+          />
+          
+          <TrainingPanel 
+            trainings={trainings}
+            removeExerciseFromTraining={removeExerciseFromTraining}
+            showExerciseDetails={showExerciseDetails}
+            saveTraining={saveTraining}
+          />
+          
+          <LastTrainingsPanel 
+            lastTrainings={lastTrainings}
+            loadTrainingToToday={loadTrainingToToday}
+          />
         </ScrollView>
       )}
-      <Modal visible={!!selectedExercise} transparent animationType="slide">
-        <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
-            {selectedExercise && (
-              <>
-                <Text style={styles.modalTitle}>{selectedExercise.name}</Text>
-                <Text>{selectedExercise.description}</Text>
-                <TextInput
-                  style={styles.input}
-                  keyboardType="numeric"
-                  placeholder="Enter count"
-                  value={exerciseCount}
-                  onChangeText={setExerciseCount}
-                />
-                <Button title="Add" onPress={addExerciseToTraining} />
-                <Button title="Close" onPress={() => setSelectedExercise(null)} />
-              </>
-            )}
-          </View>
-        </View>
-      </Modal>
+
+      <ExerciseDetailsModal 
+        selectedExerciseDetails={selectedExerciseDetails}
+        onClose={() => setSelectedExerciseDetails(null)}
+      />
+
+      <AddExerciseModal 
+        selectedExercise={selectedExercise}
+        exerciseCount={exerciseCount}
+        setExerciseCount={setExerciseCount}
+        addExerciseToTraining={addExerciseToTraining}
+        onClose={() => setSelectedExercise(null)}
+      />
     </View>
   );
 };
@@ -453,7 +595,7 @@ const styles = StyleSheet.create({
   },
   exerciseList: {
     marginTop: 10,
-    paddingLeft: 20,
+    paddingLeft: 0,
   },
   exerciseItem: {
     flexDirection: "column",
@@ -528,9 +670,6 @@ const styles = StyleSheet.create({
     marginLeft: 10,
     marginVertical: 2,
   },
-  modalContainer: { flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "rgba(0,0,0,0.5)" },
-  modalContent: { backgroundColor: "white", padding: 20, borderRadius: 10, width: 300 },
-  modalTitle: { fontSize: 18, fontWeight: "bold", marginBottom: 10 },
   input: { borderWidth: 1, padding: 5, marginVertical: 10 },
   emptyStateContainer: {
     padding: 20,
@@ -554,6 +693,27 @@ const styles = StyleSheet.create({
   },
   deleteButton: {
     padding: 5,
+  },
+  exerciseNameContainer: {
+    flex: 1,
+  },
+  exerciseDescription: {
+    fontSize: 16,
+    marginVertical: 10,
+    color: '#333',
+    lineHeight: 22,
+  },
+  exerciseDifficulty: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#666',
+    marginBottom: 10,
+  },
+  exerciseCount: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#666',
+    marginBottom: 15,
   },
 });
 
